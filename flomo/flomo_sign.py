@@ -1,4 +1,5 @@
 import hashlib
+import os
 
 
 def _ksort(d):
@@ -6,6 +7,13 @@ def _ksort(d):
 
 
 def getSign(e):
+    """
+    生成 flomo API 签名
+    安全修复：从环境变量 FLOMO_SIGN_SALT 读取盐值，不再硬编码
+    """
+    salt = os.environ.get("FLOMO_SIGN_SALT", "")
+    if not salt:
+        raise ValueError("请设置环境变量 FLOMO_SIGN_SALT")
     e = _ksort(e)
     t = ""
     for i in e:
@@ -18,31 +26,8 @@ def getSign(e):
             else:
                 t += f"{i}={o}&"
     t = t[:-1]
-    return c(t + "dbbc3dd73364b4084c3a69346e0ce2b2")
+    return c(t + salt)
 
 
 def c(t):
     return hashlib.md5(t.encode('utf-8')).hexdigest()
-
-
-# 测试数据
-# e = {
-#     "api_key": "flomo_web",
-#     "app_version": "4.0",
-#     "platform": "web",
-#     "timestamp": 1720147723,
-#     "webp": "1"
-# }
-
-e = {
-    "limit": 200,
-    "latest_updated_at": 0,
-    "tz": "8:0",
-    "timestamp": 1720075310,
-    "api_key": "flomo_web",
-    "app_version": "4.0",
-    "platform": "web",
-    "webp": "1"
-}
-
-print(getSign(e))
